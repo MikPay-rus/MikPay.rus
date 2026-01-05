@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MikPay</title>
+  <style>
+    :root{
+      --bg1:#4e6cff; --bg2:#6fc1ff;
+      --card:#ffffff; --text:#0f172a; --muted:#64748b;
+      --line:#e5e7eb; --pri:#4e6cff; --bad:#ef4444;
+      --sh:0 18px 50px rgba(0,0,0,.20);
+      --r:18px;
+      --toast:rgba(15,23,42,.92);
+      --ok:#22c55e;
+    }
+    body.dark{
+      --bg1:#0b1220; --bg2:#111827;
+      --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+      --line:#1f2937; --pri:#5b7cfa;
+      --sh:0 18px 60px rgba(0,0,0,.45);
+      --toast:rgba(255,255,255,.12);
+    }
+    *{ box-sizing:border-box; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif }
+    body{
+      margin:0; min-height:100vh; color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+      background:
+        radial-gradient(900px 500px at 10% 10%, rgba(255,255,255,.35), transparent 60%),
+        radial-gradient(700px 420px at 90% 20%, rgba(255,255,255,.25), transparent 55%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+    }
+
+    .app{
+      width:min(980px,100%);
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.22);
+      border-radius:calc(var(--r) + 12px);
+      padding:14px;
+      backdrop-filter: blur(10px);
+    }
+    .panel{
+      position:relative;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      box-shadow:var(--sh);
+      overflow:hidden;
+    }
+
+    header{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px; border-bottom:1px solid var(--line);
+      gap:12px;
+    }
+    .brand{display:flex; gap:10px; align-items:center; user-select:none}
+    .logo{
+      width:36px;height:36px;border-radius:14px;
+      background:linear-gradient(135deg,var(--pri),#9ab2ff);
+      box-shadow:0 14px 26px rgba(78,108,255,.35);
+    }
+    .titles{display:flex; flex-direction:column; line-height:1.1}
+    .titles b{font-size:15px; letter-spacing:.2px}
+    .titles small{color:var(--muted); font-size:12px}
+    .pill{
+      font-size:12px; color:var(--muted);
+      border:1px solid var(--line);
+      padding:6px 10px; border-radius:999px;
+      white-space:nowrap;
+    }
+    .iconbtn{
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+    }
+    .iconbtn:disabled{opacity:.55;cursor:not-allowed}
+
+    .screen{padding:16px 16px 84px}
+    @media (min-width:900px){ .screen{padding:18px 18px 92px} }
+
+    .title{font-size:22px; margin:6px 0 6px; text-align:center}
+    .sub{color:var(--muted); font-size:13px; margin:0 0 14px; text-align:center}
+
+    .grid{display:grid; grid-template-columns:1fr; gap:12px}
+    @media (min-width:900px){ .grid.two{grid-template-columns:1fr 1fr} }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:transparent;
+    }
+    .card h3{margin:0 0 10px;font-size:14px}
+    .muted{color:var(--muted); font-size:13px}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input, textarea{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      outline:none;
+      font-size:15px;
+      background:transparent;
+      color:var(--text);
+    }
+    input:focus, textarea:focus{
+      border-color:rgba(78,108,255,.55);
+      box-shadow:0 0 0 3px rgba(78,108,255,.18);
+    }
+
+    .btn{
+      width:100%;
+      border:none;
+      border-radius:14px;
+      padding:12px 14px;
+      background:var(--pri);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      margin-top:10px;
+    }
+    .btn.secondary{
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+      font-weight:900;
+    }
+    .btn.danger{background:var(--bad)}
+    .btn.ok{background:var(--ok)}
+    .hidden{display:none !important}
+
+    .balance{font-size:36px;font-weight:950;letter-spacing:-.6px;margin:6px 0 0}
+    .list{margin-top:10px}
+    .item{
+      border-top:1px solid var(--line);
+      padding:10px 0;
+      display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+    }
+    .item:first-child{border-top:none;padding-top:0}
+    .tag{
+      font-size:12px;border:1px solid var(--line);
+      padding:6px 10px;border-radius:999px;color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .nav{
+      position:absolute; left:0; right:0; bottom:0;
+      border-top:1px solid var(--line);
+      padding:10px;
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:8px;
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,.02));
+    }
+    .navbtn{
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--muted);
+      border-radius:14px;
+      padding:10px 8px;
+      cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      font-size:11px;
+    }
+    .navbtn span{font-size:18px;line-height:1}
+    .navbtn.active{
+      color:var(--text);
+      border-color:rgba(78,108,255,.45);
+      background:rgba(78,108,255,.10);
+    }
+    .navbtn:disabled{opacity:.55;cursor:not-allowed}
+
+    .bankGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (min-width:900px){ .bankGrid{grid-template-columns:repeat(3,1fr)} }
+    .bankCard{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      cursor:pointer;
+      user-select:none;
+      display:flex; gap:10px; align-items:center;
+      transition:transform .08s ease, background .08s ease, border-color .08s ease;
+    }
+    .bankCard:active{ transform:scale(.99) }
+    .bankCard.active{
+      border-color:rgba(78,108,255,.55);
+      background:rgba(78,108,255,.10);
+    }
+    .bankIcon{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid var(--line);
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+    }
+    .bankName{font-weight:900; font-size:13px}
+    .bankHint{color:var(--muted); font-size:12px; margin-top:2px}
+
+    .overlay{
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      align-items: flex-start;
+
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+      z-index: 9998;
+    }
+    .modal{
+      max-height: 90vh;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+
+      width:min(560px,100%);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--sh);
+      overflow:hidden;
+    }
+    .modal header{border-bottom:1px solid var(--line)}
+    .close{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:12px;
+    }
+    .toast{
+      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+      background:var(--toast); color:#fff;
+      padding:10px 12px; border-radius:14px;
+      font-size:13px; box-shadow:0 16px 40px rgba(0,0,0,.35);
+      max-width:min(620px,92%);
+      z-index: 9999;
+    }
+    body.dark .toast{color:var(--text)}
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="panel">
+
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titles">
+          <b>MikPay</b>
+          <small>удобный интерфейс платежей</small>
+        </div>
+        <span class="pill" id="rolePill">Гость</span>
+      </div>
+      <button class="iconbtn" id="gearBtn" aria-label="Настройки">⚙️</button>
+    </header>
+
+    <div class="screen" id="authScreen">
+      <div class="title">Вход / Регистрация</div>
+      <p class="sub">Аккаунт сохраняется в этом браузере (не инкогнито). Перенос между устройствами — через Импорт/Экспорт в настройках.</p>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>Регистрация</h3>
+          <label>Email</label>
+          <input id="regEmail" type="email" placeholder="example@mail.com" autocomplete="email" />
+          <label>Пароль</label>
+          <input id="regPass" type="password" placeholder="Придумайте пароль" autocomplete="new-password" />
+          <button class="btn" id="regBtn">Создать аккаунт</button>
+        </div>
+
+        <div class="card">
+          <h3>Вход</h3>
+          <label>Email</label>
+          <input id="loginEmail" type="email" placeholder="example@mail.com" autocomplete="username" />
+          <label>Пароль</label>
+          <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <button class="btn" id="loginBtn">Войти</button>
+          <button class="btn secondary" id="forgotBtn">Забыли пароль?</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="appScreen">
+      <div id="homeView">
+        <div class="card">
+          <div class="muted">Баланс</div>
+          <div class="balance" id="bal">0 ₽</div>
+          <div class="muted" style="margin-top:8px" id="who">—</div>
+
+          <h3 style="margin-top:14px">История</h3>
+          <div class="list" id="opsList"><div class="muted">Пока пусто</div></div>
+        </div>
+      </div>
+
+      <div class="hidden" id="payView">
+        <div class="card">
+          <h3>Платёж</h3>
+          <div class="muted">Выберите провайдера и сумму. Откроем сайт банка/сервиса. После успешной оплаты нажмите «Подтвердить».</div>
+          <div class="bankGrid" id="bankGridPay"></div>
+
+          <label>Сумма (₽)</label>
+          <input id="payAmount" type="number" inputmode="numeric" placeholder="1000" />
+          <label>Комментарий</label>
+          <input id="payNote" type="text" placeholder="например: заказ #123" />
+
+          <button class="btn" id="payStartBtn">Перейти к оплате (откроется сайт)</button>
+          <button class="btn ok" id="payConfirmBtn" disabled>Подтвердить оплату</button>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Пополнение</h3>
+          <div class="muted">Откроем выбранный сервис. После пополнения нажмите «Подтвердить пополнение».</div>
+          <div class="bankGrid" id="bankGridTopup"></div>
+
+          <label>Сумма пополнения (₽)</label>
+          <input id="topupAmount" type="number" inputmode="numeric" placeholder="1000" />
+
+          <button class="btn secondary" id="topupStartBtn">Перейти к пополнению (откроется сайт)</button>
+          <button class="btn ok" id="topupConfirmBtn" disabled>Подтвердить пополнение</button>
+        </div>
+      </div>
+
+      <div class="hidden" id="trView">
+        <div class="card">
+          <h3>Перевод</h3>
+          <div class="muted">Выберите провайдера. После выполнения в банке нажмите «Подтвердить перевод».</div>
+          <div class="bankGrid" id="bankGridTr"></div>
+
+          <label>Кому (описание)</label>
+          <input id="trTo" type="text" placeholder="например: +7••• или карта/кошелёк" />
+          <label>Сумма (₽)</label>
+          <input id="trAmount" type="number" inputmode="numeric" placeholder="500" />
+          <label>Комментарий</label>
+          <input id="trNote" type="text" placeholder="например: возврат долга" />
+
+          <button class="btn" id="trStartBtn">Перейти к переводу (откроется сайт)</button>
+          <button class="btn ok" id="trConfirmBtn" disabled>Подтвердить перевод</button>
+        </div>
+      </div>
+
+      <div class="hidden" id="profView">
+        <div class="card">
+          <h3>Профиль</h3>
+          <div class="list">
+            <div class="item">
+              <div><b>Email</b><div class="muted" id="profEmail">—</div></div>
+              <span class="tag">аккаунт</span>
+            </div>
+            <div class="item">
+              <div><b>Поддержка</b><div class="muted">wwwwliii@outlook.com</div></div>
+              <span class="tag">email</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <button class="navbtn active" id="navHome"><span>🏠</span>Главная</button>
+        <button class="navbtn" id="navPay"><span>💳</span>Платежи</button>
+        <button class="navbtn" id="navTr"><span>🔁</span>Переводы</button>
+        <button class="navbtn" id="navProf"><span>👤</span>Профиль</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="settingsOv">
+  <div class="modal" onclick="event.stopPropagation()">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titles"><b>Настройки</b><small id="settingsEmail">—</small></div>
+      </div>
+      <button class="close" id="settingsCloseBtn">✕</button>
+    </header>
+    <div class="screen" style="padding-bottom:16px">
+      <div class="card">
+        <h3>Внешний вид</h3>
+        <button class="btn secondary" id="themeBtn">Сменить тему</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Безопасность</h3>
+        <button class="btn secondary" id="changePassBtn">Сменить пароль</button>
+        <button class="btn secondary" id="forgotFromSettingsBtn">Забыли пароль?</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Перенос между устройствами</h3>
+        <button class="btn secondary" id="exportBtn">Экспорт</button>
+        <button class="btn secondary" id="importBtn">Импорт</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Данные</h3>
+        <button class="btn secondary" id="resetAllBtn">Сбросить данные</button>
+      </div>
+
+      <button class="btn danger" id="logoutBtn">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="forgotOv">
+  <div class="modal" onclick="event.stopPropagation()">
+    <header>
+      <div class="brand"><div class="logo"></div><div class="titles"><b>Сброс пароля</b><small>в этом браузере</small></div></div>
+      <button class="close" id="forgotCloseBtn">✕</button>
+    </header>
+    <div class="screen" style="padding-bottom:16px">
+      <label>Email</label>
+      <input id="forgotEmail" type="email" placeholder="example@mail.com" />
+      <label>Новый пароль</label>
+      <input id="forgotNew" type="password" placeholder="••••••••" />
+      <button class="btn" id="resetPassBtn">Сбросить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+<input id="importFile" type="file" accept="application/json" class="hidden" />
+
+<script>
+(() => {
+  "use strict";
+  const K_USERS="mikpay_users", K_SESSION="mikpay_session", K_THEME="mikpay_theme";
+  const BANKS=[
+    { id:"sber",  name:"Сбер",     icon:"🟢", url:"https://www.sberbank.ru/" },
+    { id:"tbank", name:"Т-Банк",   icon:"🟡", url:"https://www.tbank.ru/" },
+    { id:"yoom",  name:"ЮMoney",   icon:"🔵", url:"https://yoomoney.ru/" },
+    { id:"vtb",   name:"ВТБ",      icon:"🔷", url:"https://www.vtb.ru/" },
+    { id:"ozon",  name:"Озон Банк",icon:"🟣", url:"https://finance.ozon.ru/" }
+  ];
+  const el=(id)=>document.getElementById(id);
+  const $$=(s)=>Array.from(document.querySelectorAll(s));
+  const safeJSON=(v,f)=>{try{return JSON.parse(v??"")}catch{return f}};
+  const loadUsers=()=>safeJSON(localStorage.getItem(K_USERS),{})||{};
+  const saveUsers=(u)=>localStorage.setItem(K_USERS,JSON.stringify(u));
+  const loadSession=()=>safeJSON(localStorage.getItem(K_SESSION),null);
+  const saveSession=(s)=>localStorage.setItem(K_SESSION,JSON.stringify(s));
+  const money=(n)=>Math.max(0,Math.floor(Number(n)||0)).toLocaleString("ru-RU")+" ₽";
+  const nowStr=()=>new Date().toLocaleString("ru-RU");
+  const toast=(m)=>{const t=el("toast");t.textContent=m;t.classList.remove("hidden");setTimeout(()=>t.classList.add("hidden"),1600)};
+
+  const views={home:el("homeView"),pay:el("payView"),tr:el("trView"),prof:el("profView")};
+  const navBtns={home:el("navHome"),pay:el("navPay"),tr:el("navTr"),prof:el("navProf")};
+  const navTo=(k)=>{Object.keys(views).forEach(x=>views[x].classList.toggle("hidden",x!==k));Object.keys(navBtns).forEach(x=>navBtns[x].classList.toggle("active",x===k))};
+
+  const current=()=>{const s=loadSession();if(!s||!s.email)return null;const u=loadUsers()[s.email];if(!u)return null;return{email:s.email,u}};
+  const addOp=(type,title,amount)=>{const c=current();if(!c)return;const users=loadUsers();users[c.email].ops=users[c.email].ops||[];users[c.email].ops.unshift({type,title,amount:Math.floor(Number(amount)||0),when:nowStr()});saveUsers(users)};
+
+  const render=()=>{const c=current();if(!c)return;
+    el("rolePill").textContent="Пользователь";
+    el("bal").textContent=money(c.u.balance||0);
+    el("who").textContent="Вы вошли как: "+c.email;
+    el("profEmail").textContent=c.email;
+    const ops=c.u.ops||[];
+    el("opsList").innerHTML=!ops.length?'<div class="muted">Пока пусто</div>':ops.slice(0,12).map(o=>`
+      <div class="item"><div><b>${o.title}</b><div class="muted">${o.when}</div></div><span class="tag">${o.amount?money(o.amount):"—"}</span></div>
+    `).join("");
+  };
+
+  const showAuth=()=>{el("authScreen").classList.remove("hidden");el("appScreen").classList.add("hidden");el("rolePill").textContent="Гость";el("gearBtn").disabled=true;$$(".navbtn").forEach(b=>b.disabled=true)};
+  const showApp=()=>{el("authScreen").classList.add("hidden");el("appScreen").classList.remove("hidden");el("gearBtn").disabled=false;$$(".navbtn").forEach(b=>b.disabled=false);navTo("home");render()};
+
+  const openBank=(bankId)=>{
+    const bank=BANKS.find(b=>b.id===bankId)||BANKS[0];
+    const w=window.open(bank.url,"_blank","noopener,noreferrer");
+    if(!w && confirm("Браузер заблокировал окно. Открыть в этой вкладке?")) location.href=bank.url;
+  };
+
+  const makeBankSelector=(mountId,stateObj,key)=>{
+    const mount=el(mountId);
+    mount.innerHTML=BANKS.map(b=>`
+      <div class="bankCard" data-bank="${b.id}">
+        <div class="bankIcon">${b.icon}</div>
+        <div><div class="bankName">${b.name}</div></div>
+      </div>`).join("");
+    const setActive=(id)=>{
+      stateObj[key]=id;
+      $$("#"+mountId+" .bankCard").forEach(c=>c.classList.toggle("active",c.dataset.bank===id));
+    };
+    mount.addEventListener("click",(e)=>{const card=e.target.closest(".bankCard");if(card) setActive(card.dataset.bank)});
+    setActive(BANKS[0].id);
+  };
+
+  if(localStorage.getItem(K_THEME)==="dark") document.body.classList.add("dark");
+
+  // overlays
+  const closeOv=(id)=>el(id).classList.add("hidden");
+  const openOv=(id)=>el(id).classList.remove("hidden");
+  el("settingsCloseBtn").onclick=()=>closeOv("settingsOv");
+  el("forgotCloseBtn").onclick=()=>closeOv("forgotOv");
+  $$(".overlay").forEach(ov=>ov.addEventListener("click",()=>ov.classList.add("hidden")));
+  $$(".modal").forEach(m=>m.addEventListener("click",(e)=>e.stopPropagation()));
+
+  // auth
+  el("regBtn").onclick=()=>{
+    const email=el("regEmail").value.trim().toLowerCase();
+    const pass=el("regPass").value;
+    if(!email||!pass) return toast("Заполни email и пароль");
+    const users=loadUsers();
+    if(users[email]) return toast("Аккаунт уже есть");
+    users[email]={pass,balance:0,ops:[]};
+    saveUsers(users);
+    toast("Аккаунт создан");
+    el("loginEmail").value=email; el("loginPass").value=pass;
+  };
+  el("loginBtn").onclick=()=>{
+    const email=el("loginEmail").value.trim().toLowerCase();
+    const pass=el("loginPass").value;
+    const users=loadUsers();
+    if(!users[email]||users[email].pass!==pass) return toast("Неверный логин/пароль");
+    saveSession({email});
+    toast("Вход выполнен");
+    showApp();
+  };
+
+  // settings
+  el("gearBtn").onclick=()=>{
+    const c=current(); if(!c) return toast("Сначала войдите");
+    el("settingsEmail").textContent=c.email;
+    openOv("settingsOv");
+  };
+  el("themeBtn").onclick=()=>{
+    document.body.classList.toggle("dark");
+    localStorage.setItem(K_THEME, document.body.classList.contains("dark")?"dark":"light");
+    toast("Тема изменена");
+  };
+
+  // forgot
+  el("forgotBtn").onclick=()=>openOv("forgotOv");
+  el("forgotFromSettingsBtn").onclick=()=>openOv("forgotOv");
+  el("resetPassBtn").onclick=()=>{
+    const email=(el("forgotEmail").value||"").trim().toLowerCase();
+    const np=el("forgotNew").value;
+    if(!email||!np) return toast("Заполните поля");
+    const users=loadUsers();
+    if(!users[email]) return toast("Аккаунт не найден");
+    users[email].pass=np; saveUsers(users);
+    toast("Пароль сброшен");
+    closeOv("forgotOv");
+    el("loginEmail").value=email; el("loginPass").value=np;
+  };
+
+  // export/import/reset/logout
+  el("exportBtn").onclick=()=>{
+    const payload={users:loadUsers(),session:loadSession(),theme:localStorage.getItem(K_THEME)||"light",exportedAt:new Date().toISOString()};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="mikpay_export.json";
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast("Экспорт готов");
+  };
+  el("importBtn").onclick=()=>{const inp=el("importFile"); inp.value=""; inp.click();};
+  el("importFile").onchange=()=>{
+    const file=el("importFile").files?.[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const data=JSON.parse(String(r.result||""));
+        if(!data||!data.users) return toast("Неверный файл");
+        if(!confirm("Импорт заменит данные на этом устройстве. Продолжить?")) return;
+        localStorage.setItem(K_USERS, JSON.stringify(data.users||{}));
+        localStorage.setItem(K_SESSION, JSON.stringify(data.session||null));
+        toast("Импорт выполнен");
+        setTimeout(()=>location.reload(),400);
+      }catch{ toast("Ошибка импорта"); }
+    };
+    r.readAsText(file);
+  };
+  el("resetAllBtn").onclick=()=>{
+    if(!confirm("Сбросить данные?")) return;
+    localStorage.removeItem(K_USERS); localStorage.removeItem(K_SESSION);
+    closeOv("settingsOv"); toast("Сброшено"); showAuth();
+  };
+  el("logoutBtn").onclick=()=>{
+    saveSession(null);
+    closeOv("settingsOv");
+    toast("Вы вышли");
+    showAuth();
+  };
+
+  // bank selectors + flows
+  const payState={bank:BANKS[0].id}, topupState={bank:BANKS[0].id}, trState={bank:BANKS[0].id};
+  makeBankSelector("bankGridPay", payState, "bank");
+  makeBankSelector("bankGridTopup", topupState, "bank");
+  makeBankSelector("bankGridTr", trState, "bank");
+
+  let pendingPay=null, pendingTopup=null, pendingTr=null;
+  const amt=(v)=>Math.floor(Number(v||0));
+
+  el("payStartBtn").onclick=()=>{
+    const c=current(); if(!c) return toast("Сначала войдите");
+    const sum=amt(el("payAmount").value);
+    if(!Number.isFinite(sum)||sum<=0) return toast("Введите сумму");
+    pendingPay={bank:payState.bank,amount:sum,note:(el("payNote").value||"").trim()};
+    el("payConfirmBtn").disabled=false;
+    openBank(pendingPay.bank);
+  };
+  el("payConfirmBtn").onclick=()=>{
+    const c=current(); if(!c) return;
+    if(!pendingPay) return toast("Нет активного платежа");
+    const users=loadUsers();
+    const bal=users[c.email].balance||0;
+    if(pendingPay.amount>bal) return toast("Недостаточно средств");
+    users[c.email].balance=bal-pendingPay.amount; saveUsers(users);
+    const bankName=BANKS.find(b=>b.id===pendingPay.bank)?.name||"Провайдер";
+    addOp("pay",`Платёж (${bankName}): -${money(pendingPay.amount)}${pendingPay.note? " • "+pendingPay.note:""}`,pendingPay.amount);
+    pendingPay=null; el("payConfirmBtn").disabled=true;
+    toast("Готово"); render();
+  };
+
+  el("topupStartBtn").onclick=()=>{
+    const c=current(); if(!c) return toast("Сначала войдите");
+    const sum=amt(el("topupAmount").value);
+    if(!Number.isFinite(sum)||sum<=0) return toast("Введите сумму");
+    pendingTopup={bank:topupState.bank,amount:sum};
+    el("topupConfirmBtn").disabled=false;
+    openBank(pendingTopup.bank);
+  };
+  el("topupConfirmBtn").onclick=()=>{
+    const c=current(); if(!c) return;
+    if(!pendingTopup) return toast("Нет активного пополнения");
+    const users=loadUsers();
+    users[c.email].balance=(users[c.email].balance||0)+pendingTopup.amount; saveUsers(users);
+    const bankName=BANKS.find(b=>b.id===pendingTopup.bank)?.name||"Провайдер";
+    addOp("topup",`Пополнение (${bankName}): +${money(pendingTopup.amount)}`,pendingTopup.amount);
+    pendingTopup=null; el("topupConfirmBtn").disabled=true;
+    toast("Готово"); render();
+  };
+
+  el("trStartBtn").onclick=()=>{
+    const c=current(); if(!c) return toast("Сначала войдите");
+    const sum=amt(el("trAmount").value);
+    const to=(el("trTo").value||"").trim();
+    if(!to) return toast("Укажите получателя");
+    if(!Number.isFinite(sum)||sum<=0) return toast("Введите сумму");
+    pendingTr={bank:trState.bank,amount:sum,to,note:(el("trNote").value||"").trim()};
+    el("trConfirmBtn").disabled=false;
+    openBank(pendingTr.bank);
+  };
+  el("trConfirmBtn").onclick=()=>{
+    const c=current(); if(!c) return;
+    if(!pendingTr) return toast("Нет активного перевода");
+    const users=loadUsers();
+    const bal=users[c.email].balance||0;
+    if(pendingTr.amount>bal) return toast("Недостаточно средств");
+    users[c.email].balance=bal-pendingTr.amount; saveUsers(users);
+    const bankName=BANKS.find(b=>b.id===pendingTr.bank)?.name||"Провайдер";
+    addOp("transfer",`Перевод (${bankName}): -${money(pendingTr.amount)} → ${pendingTr.to}${pendingTr.note? " • "+pendingTr.note:""}`,pendingTr.amount);
+    pendingTr=null; el("trConfirmBtn").disabled=true;
+    toast("Готово"); render();
+  };
+
+  // nav
+  navBtns.home.onclick=()=>{navTo("home"); render()};
+  navBtns.pay.onclick=()=>navTo("pay");
+  navBtns.tr.onclick=()=>navTo("tr");
+  navBtns.prof.onclick=()=>{navTo("prof"); render()};
+
+  // init
+  el("gearBtn").disabled=true; $$(".navbtn").forEach(b=>b.disabled=true);
+  const s=loadSession(), u=loadUsers();
+  if(s && s.email && u[s.email]) showApp(); else showAuth();
+})();
+</script>
+</body>
+</html>
